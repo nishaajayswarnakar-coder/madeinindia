@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "A user of the platform (buyer, supplier, or admin).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["buyer", "supplier", "admin"] },
+        "phone": { "type": "string", "maxLength": 20 },
+        "companyId": { "type": "string", "maxLength": 128 },
+        "emailVerified": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "company": {
+      "title": "Company",
+      "description": "A supplier or manufacturer business profile.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "slug": { "type": "string", "maxLength": 250 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "type": { "type": "string", "maxLength": 50 },
+        "city": { "type": "string", "maxLength": 100 },
+        "state": { "type": "string", "maxLength": 100 },
+        "verified": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "name", "slug", "createdAt"]
+    },
+    "product": {
+      "title": "Product",
+      "description": "An industrial product listed by a company.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "price": { "type": "number" },
+        "moq": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 20 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["companyId", "name", "category", "createdAt"]
+    },
+    "requirement": {
+      "title": "Requirement",
+      "description": "A buyer's requirement posting (RFQ).",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 20 },
+        "location": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["open", "closed", "fulfilled"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["buyerId", "title", "category", "quantity", "status", "createdAt"]
+    },
+    "enquiry": {
+      "title": "Enquiry",
+      "description": "A message or quote request from a buyer to a supplier.",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string", "maxLength": 128 },
+        "supplierId": { "type": "string", "maxLength": 128 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "requirementId": { "type": "string", "maxLength": 128 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["pending", "replied", "closed"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["buyerId", "supplierId", "message", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "User profiles and settings."
+    },
+    "/companies/{companyId}": {
+      "schema": "company",
+      "description": "Supplier business profiles."
+    },
+    "/products/{productId}": {
+      "schema": "product",
+      "description": "Product listings."
+    },
+    "/requirements/{requirementId}": {
+      "schema": "requirement",
+      "description": "Buyer requirement posts."
+    },
+    "/enquiries/{enquiryId}": {
+      "schema": "enquiry",
+      "description": "Enquiries and quotes."
+    }
+  }
+}

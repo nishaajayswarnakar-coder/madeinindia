@@ -1,0 +1,159 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null && request.auth.token.email_verified == true; }
+    
+    // User validation
+    function isValidUser(data) {
+      return data.size() >= 4 && data.size() <= 8
+        && data.uid is string && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && data.role in ["buyer", "supplier", "admin"]
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['uid', 'email', 'role', 'createdAt'])
+        && ( !('name' in data) || (data.name is string && data.name.size() <= 100) )
+        && ( !('phone' in data) || (data.phone is string && data.phone.size() <= 20) )
+        && ( !('companyId' in data) || (data.companyId is string && data.companyId.size() <= 128) )
+        && ( !('emailVerified' in data) || (data.emailVerified is bool) );
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && isValidId(userId) && userId == request.auth.uid 
+                    && isValidUser(incoming()) && incoming().uid == request.auth.uid
+                    && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming())
+                    && incoming().uid == existing().uid
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'companyId']);
+    }
+
+    // Company validation
+    function isValidCompany(data) {
+      return data.size() >= 4 && data.size() <= 9
+        && data.userId is string && data.userId.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.slug is string && data.slug.size() <= 250
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['userId', 'name', 'slug', 'createdAt'])
+        && ( !('description' in data) || (data.description is string && data.description.size() <= 5000) )
+        && ( !('type' in data) || (data.type is string && data.type.size() <= 50) )
+        && ( !('city' in data) || (data.city is string && data.city.size() <= 100) )
+        && ( !('state' in data) || (data.state is string && data.state.size() <= 100) )
+        && ( !('verified' in data) || (data.verified is bool) );
+    }
+
+    match /companies/{companyId} {
+      allow read: if true; // Publicly readable
+      allow create: if isSignedIn() && isValidId(companyId)
+                    && isValidCompany(incoming())
+                    && incoming().userId == request.auth.uid
+                    && incoming().createdAt == request.time
+                    && (!('verified' in incoming()) || incoming().verified == false); // Default to unverified
+      allow update: if isSignedIn() && isValidCompany(incoming())
+                    && existing().userId == request.auth.uid
+                    && incoming().userId == existing().userId
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'slug', 'description', 'type', 'city', 'state'])
+                    && (!('verified' in incoming().diff(existing()).affectedKeys())); // user cannot verify themselves
+    }
+
+    // Product validation
+    function isValidProduct(data) {
+      return data.size() >= 4 && data.size() <= 8
+        && data.companyId is string && data.companyId.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.category is string && data.category.size() <= 100
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['companyId', 'name', 'category', 'createdAt'])
+        && ( !('price' in data) || data.price is number )
+        && ( !('moq' in data) || data.moq is number )
+        && ( !('unit' in data) || (data.unit is string && data.unit.size() <= 20) )
+        && ( !('description' in data) || (data.description is string && data.description.size() <= 5000) );
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(productId)
+                    && isValidProduct(incoming())
+                    && incoming().createdAt == request.time
+                    && exists(/databases/$(database)/documents/companies/$(incoming().companyId))
+                    && get(/databases/$(database)/documents/companies/$(incoming().companyId)).data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidProduct(incoming())
+                    && existing().companyId == incoming().companyId
+                    && incoming().createdAt == existing().createdAt
+                    && get(/databases/$(database)/documents/companies/$(existing().companyId)).data.userId == request.auth.uid
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'price', 'moq', 'unit', 'description']);
+      allow delete: if isSignedIn() 
+                    && get(/databases/$(database)/documents/companies/$(existing().companyId)).data.userId == request.auth.uid;
+    }
+
+    // Requirement validation
+    function isValidRequirement(data) {
+      return data.size() >= 6 && data.size() <= 8
+        && data.buyerId is string && data.buyerId.size() <= 128
+        && data.title is string && data.title.size() <= 200
+        && data.category is string && data.category.size() <= 100
+        && data.quantity is number
+        && data.status in ["open", "closed", "fulfilled"]
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['buyerId', 'title', 'category', 'quantity', 'status', 'createdAt'])
+        && ( !('unit' in data) || (data.unit is string && data.unit.size() <= 20) )
+        && ( !('location' in data) || (data.location is string && data.location.size() <= 100) );
+    }
+
+    match /requirements/{requirementId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(requirementId)
+                    && isValidRequirement(incoming())
+                    && incoming().buyerId == request.auth.uid
+                    && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && isValidRequirement(incoming())
+                    && existing().buyerId == request.auth.uid
+                    && incoming().buyerId == existing().buyerId
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'category', 'quantity', 'unit', 'location', 'status']);
+      allow delete: if isSignedIn() && existing().buyerId == request.auth.uid;
+    }
+
+    // Enquiry validation
+    function isValidEnquiry(data) {
+      return data.size() >= 5 && data.size() <= 7
+        && data.buyerId is string && data.buyerId.size() <= 128
+        && data.supplierId is string && data.supplierId.size() <= 128
+        && data.message is string && data.message.size() <= 2000
+        && data.status in ["pending", "replied", "closed"]
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['buyerId', 'supplierId', 'message', 'status', 'createdAt'])
+        && ( !('productId' in data) || (data.productId is string && data.productId.size() <= 128) )
+        && ( !('requirementId' in data) || (data.requirementId is string && data.requirementId.size() <= 128) );
+    }
+
+    match /enquiries/{enquiryId} {
+      allow get: if isSignedIn() && (existing().buyerId == request.auth.uid || existing().supplierId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.supplierId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(enquiryId)
+                    && isValidEnquiry(incoming())
+                    && incoming().buyerId == request.auth.uid
+                    && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && isValidEnquiry(incoming())
+                    && (existing().buyerId == request.auth.uid || existing().supplierId == request.auth.uid)
+                    && incoming().buyerId == existing().buyerId
+                    && incoming().supplierId == existing().supplierId
+                    && incoming().createdAt == existing().createdAt
+                    && (
+                      (existing().buyerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+                      (existing().supplierId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+                    );
+    }
+  }
+}
