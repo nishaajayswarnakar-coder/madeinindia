@@ -7,7 +7,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">MADE IN INDIA <br/><span className="text-sm font-normal text-slate-400">INDUSTRIAL HUB</span></h3>
+            <h3 className="text-white font-bold text-lg mb-4 leading-tight">Made in India, Made for the World <br/><span className="text-sm font-normal text-slate-400">- Industrial B2B Hub</span></h3>
             <p className="mb-4">India's premier B2B marketplace connecting verified manufacturers, suppliers, exporters, and industrial wholesale buyers across all Indian cities.</p>
             <div className="flex gap-2">
               <span className="text-green-500 font-bold">✓ 100% GST Verified Business Profiles</span>
@@ -54,7 +54,7 @@ export const Footer = () => {
         </div>
         
         <div className="border-t border-[#004d40] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p>© 2026 Made In India | Made For The World - Industrial Hub. All rights reserved.</p>
+          <p>&copy; 2026 <strong>Made in India, Made for the World - Industrial B2B Hub</strong>. All rights reserved.</p>
           <div className="flex gap-4">
             <Link to="/" className="hover:text-white">View Sitemap & Hubs Page</Link>
             <Link to="/admin" className="hover:text-white">Admin Login</Link>

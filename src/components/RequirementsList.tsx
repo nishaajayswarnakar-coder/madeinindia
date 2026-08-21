@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { X, Phone, Building2, MapPin, User, Mail, Clock } from 'lucide-react';
 import { getRelativeTimeString } from '../utils';
+import DirectorySearch from './DirectorySearch';
 
 type Requirement = {
   id: string;
@@ -30,13 +31,19 @@ export default function RequirementsList() {
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const navigate = useNavigate();
 
-  const fetchRequirements = async () => {
+  const fetchRequirements = async (searchTerm: string = '') => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('requirements')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (searchTerm) {
+        query = query.or(`product_name.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching requirements:', error.message);
@@ -83,37 +90,33 @@ export default function RequirementsList() {
     setIsModalOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#004d40]"></div>
-        <span className="ml-3 text-slate-600 font-medium">Loading buy requirements...</span>
-      </div>
-    );
-  }
-
-  if (requirements.length === 0) {
-    return (
-      <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
-        No buy requirements posted yet.
-      </div>
-    );
-  }
-
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-        {requirements.map((req) => (
-          <div 
-            key={req.id} 
-            onClick={() => handleCardClick(req)}
-            className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-[#004d40] transition-all flex flex-col cursor-pointer"
-          >
-            {req.image_url && (
-              <div className="mb-4 h-40 w-full overflow-hidden rounded-lg bg-slate-100">
-                <img src={req.image_url} alt={req.product_name} className="h-full w-full object-cover" />
-              </div>
-            )}
+    <div>
+      <DirectorySearch onSearch={fetchRequirements} />
+      
+      {loading ? (
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#004d40]"></div>
+          <span className="ml-3 text-slate-600 font-medium">Loading buy requirements...</span>
+        </div>
+      ) : requirements.length === 0 ? (
+        <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
+          No buy requirements found.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+            {requirements.map((req) => (
+              <div 
+                key={req.id} 
+                onClick={() => handleCardClick(req)}
+                className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-[#004d40] transition-all flex flex-col cursor-pointer"
+              >
+                {req.image_url && (
+                  <div className="mb-4 h-40 w-full overflow-hidden rounded-lg bg-slate-50">
+                    <img src={req.image_url} alt={req.product_name} className="h-full w-full object-contain p-2" />
+                  </div>
+                )}
             <div className="mb-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -261,6 +264,8 @@ export default function RequirementsList() {
           </div>
         </div>
       )}
-    </>
+        </>
+      )}
+    </div>
   );
 }

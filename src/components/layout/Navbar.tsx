@@ -23,8 +23,6 @@ export const Navbar = () => {
           <Link to="/" className="flex items-center gap-1 hover:text-green-700">
              Govt & PSU Tenders
           </Link>
-          <Link to="/" className="hover:text-green-700 text-red-600 font-bold">Buyer Demo</Link>
-          <Link to="/" className="hover:text-green-700 text-blue-600 font-bold">Seller Demo</Link>
         </div>
       </div>
 
@@ -34,9 +32,9 @@ export const Navbar = () => {
           <div className="w-10 h-10 bg-green-800 text-white rounded-full flex items-center justify-center font-bold text-xl">
             M
           </div>
-          <span className="font-bold text-xl tracking-tight hidden sm:block text-[#004d40]">
-            MADE IN INDIA <br/>
-            <span className="text-xs text-slate-500 font-normal">INDUSTRIAL HUB</span>
+          <span className="font-bold text-[17px] leading-tight tracking-tight hidden lg:block text-[#0f172a]">
+            Made in India, Made for the World<br/>
+            <span className="text-xs text-slate-500 font-medium">- Industrial B2B Hub</span>
           </span>
         </Link>
 
