@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -6,9 +6,49 @@ import RequirementsList from '../components/RequirementsList';
 import AllVerifiedB2BProducts from '../components/AllVerifiedB2BProducts';
 import TrendingProducts from '../components/TrendingProducts';
 import { categoryData } from '../data/categories';
+import { tendersData } from '../data/tenders';
+import { Loader2 } from 'lucide-react';
 
 export const Home = () => {
   const navigate = useNavigate();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+
+  const handleSyncTenders = async () => {
+    setIsSyncing(true);
+    setNotification(null);
+
+    try {
+      // Simulate frontend delay before network request for UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const response = await fetch('/api/tenders/sync-cppp-gem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer fake-auth-token`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned status: ${response.status}`);
+      }
+
+      // Mock success for now since no backend is connected
+      setNotification({ type: 'success', message: 'Tenders synced successfully!' });
+      
+    } catch (error) {
+      console.error('Tender Sync Failed:', error);
+      setNotification({ 
+        type: 'error', 
+        message: 'Unable to fetch GeM/CPPP feeds. Please check API credentials or network connectivity.' 
+      });
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setNotification(null), 6000);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8 pb-16">
       {/* Hero Section */}
@@ -125,14 +165,32 @@ export const Home = () => {
 
       {/* Govt & PSU Requirements */}
       <section className="container mx-auto px-4 mt-12 mb-12">
-        <div id="cppp-gem-feed" className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between border-b pb-4 mb-4">
+        <div id="cppp-gem-feed" className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
+          
+          {/* Notification Overlay/Banner */}
+          {notification && (
+            <div className={`absolute top-0 left-0 right-0 px-4 py-2 text-sm font-medium text-center transition-all ${
+              notification.type === 'success' ? 'bg-emerald-100 text-emerald-800 border-b border-emerald-200' : 'bg-red-100 text-red-800 border-b border-red-200'
+            }`}>
+              {notification.message}
+            </div>
+          )}
+          
+          <div className={`flex items-center justify-between border-b pb-4 mb-4 ${notification ? 'pt-8' : ''}`}>
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <h2 className="text-xl font-bold text-slate-900">Government Procurement (India) | CPPP & GeM Feed</h2>
             </div>
             <div className="flex space-x-2">
-              <button className="text-xs px-3 py-1 bg-slate-100 text-slate-700 rounded font-medium border border-slate-200">Sync Tenders</button>
+              <button 
+                id="sync-tenders-btn"
+                onClick={handleSyncTenders}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 text-xs px-3 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded font-medium border border-slate-200 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSyncing && <Loader2 className="w-3 h-3 animate-spin" />}
+                {isSyncing ? 'Syncing Tenders...' : 'Sync Tenders'}
+              </button>
               <button onClick={() => navigate('/post-requirement')} className="text-xs px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold rounded shadow-sm">Post B2B Requirement</button>
             </div>
           </div>
@@ -140,38 +198,31 @@ export const Home = () => {
             Explore high-value public active tenders, EOI inquiries, and bulk procurement contracts from central ministries, state utilities, and Maharatna/Navratna PSUs.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tender Card 1 */}
-            <div className="border border-slate-200 rounded-lg p-4 hover:border-emerald-600 transition">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-semibold px-2 py-0.5 bg-blue-100 text-blue-800 rounded">CPPP (GOVT OF INDIA)</span>
-                <span className="text-xs font-bold text-slate-800">Val: ₹ 1.85 CR</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {tendersData.map((tender) => (
+              <div key={tender.id} className="border border-slate-200 rounded-lg p-4 hover:border-emerald-600 transition flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded ${
+                      tender.source === 'CPPP' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {tender.source === 'CPPP' ? 'CPPP (GOVT OF INDIA)' : 'GeM PORTAL (GOVT E-MARKETPLACE)'}
+                    </span>
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-800">Val: {tender.value}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-900 line-clamp-2">
+                    {tender.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-2">Location: {tender.location}</p>
+                </div>
+                <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-100 text-xs">
+                  <span className="text-red-600 font-medium">Closing: {tender.closingDate}</span>
+                  <button className="text-emerald-700 font-semibold hover:underline">View Tender ↗</button>
+                </div>
               </div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                Procurement of Heavy-Duty 33kV Electrical Step-Down Transformers for Power Sub-Station Grid Expansion
-              </h3>
-              <p className="text-xs text-slate-500 mt-2">Location: Nagpur / Pune, MH</p>
-              <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-100 text-xs">
-                <span className="text-red-600 font-medium">Closing: 28-Aug-2026 05:00 PM</span>
-                <button className="text-emerald-700 font-semibold hover:underline">View Tender ↗</button>
-              </div>
-            </div>
-
-            {/* Tender Card 2 */}
-            <div className="border border-slate-200 rounded-lg p-4 hover:border-emerald-600 transition">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">GeM PORTAL (GOVT E-MARKETPLACE)</span>
-                <span className="text-xs font-bold text-slate-800">Val: ₹ 92.5 LAKHS</span>
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                Supply, Commissioning and 3-Year Onsite AMC of Cloud-Ready Rack Server Blades & Industrial Firewall
-              </h3>
-              <p className="text-xs text-slate-500 mt-2">Location: New Delhi, DL</p>
-              <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-100 text-xs">
-                <span className="text-red-600 font-medium">Closing: 02-Sep-2026 03:30 PM</span>
-                <button className="text-emerald-700 font-semibold hover:underline">View Tender ↗</button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
