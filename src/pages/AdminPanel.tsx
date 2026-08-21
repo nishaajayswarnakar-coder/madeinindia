@@ -68,14 +68,14 @@ export const AdminPanel = () => {
       // 1. Upload Product Image to Storage if selected
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `requirements/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('product-images')
           .upload(filePath, imageFile);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) throw new Error(`Image Upload Failed: ${uploadError.message}`);
 
         const { data: urlData } = supabase.storage
           .from('product-images')
@@ -84,15 +84,15 @@ export const AdminPanel = () => {
         uploadedImageUrl = urlData.publicUrl;
       }
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('requirements')
         .insert([
           {
             product_name: productName,
             category: category,
             delivery_city: deliveryCity,
-            quantity: Number(quantity),
-            unit: unit,
+            quantity: Number(quantity) || 1,
+            unit: unit || 'Piece',
             description: description,
             company_name: companyName,
             contact_name: contactName,
@@ -105,7 +105,7 @@ export const AdminPanel = () => {
           }
         ]);
 
-      if (error) throw error;
+      if (insertError) throw new Error(`Database Insert Failed: ${insertError.message}`);
 
       alert('Requirement posted directly by Admin!');
       // Reset form

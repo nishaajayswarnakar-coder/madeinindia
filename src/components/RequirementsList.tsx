@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { X, Phone, Building2, MapPin, User, Mail } from 'lucide-react';
+import { X, Phone, Building2, MapPin, User, Mail, Clock } from 'lucide-react';
+import { getRelativeTimeString } from '../utils';
 
 type Requirement = {
   id: string;
@@ -114,15 +115,21 @@ export default function RequirementsList() {
               </div>
             )}
             <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block px-2 py-1 bg-[#004d40]/10 text-[#004d40] text-xs font-semibold rounded-md">
-                  {req.category}
-                </span>
-                {req.gst_number && (
-                  <span className="inline-block px-2 py-1 bg-[#dcfce7] text-[#15803d] border border-[#86efac] text-[10px] font-bold rounded-md">
-                    ✓ GST Verified
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block px-2 py-1 bg-[#004d40]/10 text-[#004d40] text-xs font-semibold rounded-md">
+                    {req.category}
                   </span>
-                )}
+                  {req.gst_number && (
+                    <span className="inline-block px-2 py-1 bg-[#dcfce7] text-[#15803d] border border-[#86efac] text-[10px] font-bold rounded-md">
+                      ✓ GST Verified
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 text-slate-500 text-xs">
+                  <Clock className="w-3 h-3" />
+                  <span>{getRelativeTimeString(req.created_at)}</span>
+                </div>
               </div>
               <h3 className="text-lg font-bold text-slate-900 line-clamp-2">{req.product_name}</h3>
             </div>
@@ -191,6 +198,11 @@ export default function RequirementsList() {
                   <p className="text-slate-700 whitespace-pre-wrap">{selectedRequirement.description}</p>
                 </div>
               )}
+
+              <div className="mb-6 px-3 py-2 bg-slate-100 rounded-md text-sm text-slate-600 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <strong>Posted:</strong> {getRelativeTimeString(selectedRequirement.created_at)}
+              </div>
 
               <div className="border-t border-slate-100 pt-6">
                 <h4 className="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider">Buyer Contact Info</h4>

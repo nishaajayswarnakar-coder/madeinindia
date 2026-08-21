@@ -9,7 +9,7 @@ import { X, Image as ImageIcon, UploadCloud } from 'lucide-react';
 export const PostRequirement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [libraryImages, setLibraryImages] = useState<any[]>([]);
@@ -50,14 +50,14 @@ export const PostRequirement = () => {
   // Handle Direct Image Upload to Supabase Storage
   const handleFileUpload = async (file: File) => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `requirements/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('product-images')
       .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) throw new Error(`Image Upload Failed: ${uploadError.message}`);
 
     const { data } = supabase.storage
       .from('product-images')
@@ -71,7 +71,7 @@ export const PostRequirement = () => {
     const files = Array.from(event.target.files) as File[];
     
     for (const file of files) {
-      const fileName = `library/${Date.now()}_${file.name}`;
+      const fileName = `library/${Date.now()}-${Math.random().toString(36).substring(7)}_${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`;
       
       const { error } = await supabase.storage
         .from('product-images')
@@ -92,13 +92,13 @@ export const PostRequirement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
         alert("Please log in to submit a buy requirement.");
-        setLoading(false);
+        setIsSubmitting(false);
         return;
       }
 
@@ -156,7 +156,7 @@ export const PostRequirement = () => {
       console.error("Supabase error:", err);
       alert("Failed to submit: " + (err.message || "Unknown error"));
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -342,8 +342,8 @@ export const PostRequirement = () => {
             </div>
             
             <div className="pt-4 border-t border-slate-100 flex justify-end">
-              <Button type="submit" disabled={!user || loading} className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold px-8 py-6 text-lg">
-                {loading ? 'Submitting...' : 'Submit Requirement'}
+              <Button type="submit" disabled={!user || isSubmitting} className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold px-8 py-6 text-lg">
+                {isSubmitting ? 'Posting...' : 'Submit Requirement'}
               </Button>
             </div>
           </form>
