@@ -1,21 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import RequirementsList from '../components/RequirementsList';
 import AllVerifiedB2BProducts from '../components/AllVerifiedB2BProducts';
 import TrendingProducts from '../components/TrendingProducts';
-import LatestSellOffers from '../components/LatestSellOffers';
-import PostRequirementSection from '../components/PostRequirementSection';
-import PostSellOfferSection from '../components/PostSellOfferSection';
-import GovtProcurementSection from '../components/GovtProcurementSection';
 import { categoryData } from '../data/categories';
-
-
 
 export const Home = () => {
   const navigate = useNavigate();
-
   return (
     <div className="flex flex-col gap-8 pb-16">
       {/* Hero Section */}
@@ -84,12 +77,36 @@ export const Home = () => {
               </Button>
             </form>
           </div>
+          
         </div>
-           {/* Decorative Background */}
+        {/* Decorative Background */}
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-green-800/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
       </section>
-
-      <PostRequirementSection />
+            {/* Promotional Banner */}
+      <section className="bg-slate-50 py-6 mt-4">
+        <div className="container mx-auto px-4">
+          <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between shadow-sm max-w-[1200px] mx-auto gap-6 text-center md:text-left">
+            <div>
+              <span className="text-[12px] font-extrabold text-[#166534] tracking-[1px] uppercase mb-2 block">
+                Unbeatable B2B Marketing Value
+              </span>
+              <h2 className="text-[28px] md:text-[36px] font-black text-[#064e3b] mb-3 leading-[1.15] uppercase tracking-tight">
+                Promote Your<br className="hidden md:block" />
+                Business <span className="text-[#059669]">@ 1 Cup Of</span><br className="hidden md:block" />
+                <span className="text-[#059669]">Tea</span> (<span className="text-[#dc2626]">INR 10</span>) Per Day
+              </h2>
+              <p className="text-[15px] text-[#334155] max-w-[650px] m-0 leading-relaxed font-medium">
+                Connect your products with thousands of verified wholesale buyers globally at an unbeatable daily cost of just ₹10/day.
+              </p>
+            </div>
+            <div>
+              <a href="#promote" className="inline-block bg-[#059669] hover:bg-[#047857] text-white font-bold py-3.5 px-8 rounded flex-shrink-0 transition-colors shadow-md text-[15px] uppercase tracking-wide">
+                Promote Now
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Latest Buy Requirements */}
       <section className="container mx-auto px-4 pt-8">
@@ -102,42 +119,62 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* Promotional Banner */}
-      <section className="bg-slate-50 py-6 mt-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="border border-slate-700/50 rounded-xl p-8 flex flex-col md:flex-row items-center justify-between shadow-2xl max-w-[1200px] mx-auto gap-8 text-center md:text-left bg-slate-800/30 backdrop-blur-sm relative overflow-hidden">
-            {/* Subtle glow effect behind text */}
-            <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 pointer-events-none"></div>
-            
-            <div className="relative z-10 flex-1">
-              <span className="inline-block bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider mb-4 shadow-sm">
-                Unbeatable B2B Marketing Value
-              </span>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-50 mb-4 leading-tight tracking-tight">
-                Promote Your Business @ 1 Cup Of Tea (<span className="text-rose-500">INR 10</span>) Per Day
-              </h2>
-              <p className="text-lg text-slate-300 max-w-[800px] leading-relaxed font-medium">
-                Connect your products with thousands of verified wholesale buyers globally at an unbeatable daily cost of just ₹10/day.
-              </p>
-            </div>
-            <div className="relative z-10 flex-shrink-0 mt-2 md:mt-0">
-              <a href="#post-sell-offer-section" className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-lg transition-all hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.4)] text-[16px] whitespace-nowrap">
-                Start Advertising Now
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <PostSellOfferSection />
-      
-      <LatestSellOffers />
-
       {/* Verified Products Section */}
       <TrendingProducts />
       <AllVerifiedB2BProducts categories={categoryData} />
 
-      <GovtProcurementSection />
+      {/* Govt & PSU Requirements */}
+      <section className="container mx-auto px-4 mt-12 mb-12">
+        <div id="cppp-gem-feed" className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between border-b pb-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <h2 className="text-xl font-bold text-slate-900">Government Procurement (India) | CPPP & GeM Feed</h2>
+            </div>
+            <div className="flex space-x-2">
+              <button className="text-xs px-3 py-1 bg-slate-100 text-slate-700 rounded font-medium border border-slate-200">Sync Tenders</button>
+              <button onClick={() => navigate('/post-requirement')} className="text-xs px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold rounded shadow-sm">Post B2B Requirement</button>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mb-4">
+            Explore high-value public active tenders, EOI inquiries, and bulk procurement contracts from central ministries, state utilities, and Maharatna/Navratna PSUs.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tender Card 1 */}
+            <div className="border border-slate-200 rounded-lg p-4 hover:border-emerald-600 transition">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs font-semibold px-2 py-0.5 bg-blue-100 text-blue-800 rounded">CPPP (GOVT OF INDIA)</span>
+                <span className="text-xs font-bold text-slate-800">Val: ₹ 1.85 CR</span>
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Procurement of Heavy-Duty 33kV Electrical Step-Down Transformers for Power Sub-Station Grid Expansion
+              </h3>
+              <p className="text-xs text-slate-500 mt-2">Location: Nagpur / Pune, MH</p>
+              <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-red-600 font-medium">Closing: 28-Aug-2026 05:00 PM</span>
+                <button className="text-emerald-700 font-semibold hover:underline">View Tender ↗</button>
+              </div>
+            </div>
+
+            {/* Tender Card 2 */}
+            <div className="border border-slate-200 rounded-lg p-4 hover:border-emerald-600 transition">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">GeM PORTAL (GOVT E-MARKETPLACE)</span>
+                <span className="text-xs font-bold text-slate-800">Val: ₹ 92.5 LAKHS</span>
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Supply, Commissioning and 3-Year Onsite AMC of Cloud-Ready Rack Server Blades & Industrial Firewall
+              </h3>
+              <p className="text-xs text-slate-500 mt-2">Location: New Delhi, DL</p>
+              <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-red-600 font-medium">Closing: 02-Sep-2026 03:30 PM</span>
+                <button className="text-emerald-700 font-semibold hover:underline">View Tender ↗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
     </div>
   );
