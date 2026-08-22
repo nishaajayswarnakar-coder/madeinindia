@@ -10,6 +10,8 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  sendMobileOTP: (phone: string) => Promise<boolean>;
+  verifyMobileOTP: (phone: string, token: string, userMetadata?: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,6 +22,8 @@ const AuthContext = createContext<AuthContextType>({
   loginWithEmail: async () => {},
   resetPassword: async () => {},
   signOut: async () => {},
+  sendMobileOTP: async () => false,
+  verifyMobileOTP: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -92,6 +96,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const sendMobileOTP = async (phoneNumber: string) => {
+    const formattedPhone = phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`;
+    
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: formattedPhone
+    });
+
+    if (error) {
+      alert(`Failed to send OTP: ${error.message}`);
+      return false;
+    }
+    
+    return true;
+  };
+
+  const verifyMobileOTP = async (phoneNumber: string, otpCode: string, userMetadata: any = {}) => {
+    const formattedPhone = phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`;
+
+    const { data: { session }, error } = await supabase.auth.verifyOtp({
+      phone: formattedPhone,
+      token: otpCode,
+      type: 'sms'
+    });
+
+    if (error) {
+      throw new Error(`Invalid OTP: ${error.message}`);
+    }
+
+    if (userMetadata.role && session?.user) {
+      await supabase.auth.updateUser({
+        data: {
+          full_name: userMetadata.fullName,
+          role: userMetadata.role,
+          company_name: userMetadata.companyName || '',
+          phone: formattedPhone
+        }
+      });
+
+      // Trigger admin email notification
+      fetch('/api/notify-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: userMetadata.fullName,
+          email: session.user.email || 'N/A (Mobile Auth)',
+          phone: formattedPhone,
+          role: userMetadata.role,
+          companyName: userMetadata.companyName
+        })
+      }).catch(err => console.error('Admin notification trigger failed:', err));
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -100,7 +157,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signUpWithEmail, 
       loginWithEmail, 
       resetPassword, 
-      signOut 
+      signOut,
+      sendMobileOTP,
+      verifyMobileOTP
     }}>
       {!loading && children}
     </AuthContext.Provider>

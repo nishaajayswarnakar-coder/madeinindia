@@ -21,6 +21,52 @@ export const AdminPanel = () => {
     setIsAdminLoggedIn(false);
   };
 
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
+  const [adminMessage, setAdminMessage] = useState('');
+
+  const handleCreateDemoUsers = async () => {
+    setAdminActionLoading(true);
+    setAdminMessage('');
+    try {
+      const response = await fetch('/api/admin/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'CREATE_DEMO_USERS' })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || data.message || 'Failed to create demo users');
+      setAdminMessage(`Success: ${data.message} ${JSON.stringify(data.credentials)}`);
+    } catch (err: any) {
+      setAdminMessage(`Error: ${err.message}`);
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [adminUserIdToChange, setAdminUserIdToChange] = useState('');
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminActionLoading(true);
+    setAdminMessage('');
+    try {
+      const response = await fetch('/api/admin/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'CHANGE_PASSWORD', adminUserId: adminUserIdToChange, newPassword: newAdminPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || data.message || 'Failed to update password');
+      setAdminMessage(`Success: ${data.message}`);
+      setNewAdminPassword('');
+    } catch (err: any) {
+      setAdminMessage(`Error: ${err.message}`);
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
   // Form states for posting requirements
   const [productName, setProductName] = useState('');
   const [category, setCategory] = useState('Industrial Machinery');
@@ -172,14 +218,64 @@ export const AdminPanel = () => {
         <div className="bg-[#004d40] text-white p-6 flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-            <p className="text-green-100 mt-1 text-sm">Post Buy Requirement</p>
+            <p className="text-green-100 mt-1 text-sm">Manage users and posts</p>
           </div>
           <Button variant="outline" className="text-slate-900 bg-white hover:bg-slate-100" onClick={handleLogout}>
             Logout
           </Button>
         </div>
 
+        <div className="p-8 border-b border-slate-200">
+          <h3 className="text-xl font-bold mb-4 text-slate-800">Admin Tools</h3>
+          {adminMessage && (
+            <div className="mb-4 p-3 bg-blue-50 text-blue-700 text-sm border border-blue-200 rounded-lg">
+              {adminMessage}
+            </div>
+          )}
+          
+          <div className="mb-6">
+            <h4 className="font-semibold text-slate-700 mb-2">Generate Demo Accounts</h4>
+            <Button 
+              onClick={handleCreateDemoUsers} 
+              disabled={adminActionLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {adminActionLoading ? 'Creating...' : 'Create Demo Buyer & Seller'}
+            </Button>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-slate-700 mb-2">Change User Password</h4>
+            <form onSubmit={handleChangePassword} className="flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="block text-xs font-semibold mb-1 text-slate-500">User ID</label>
+                <Input 
+                  type="text" 
+                  required 
+                  placeholder="e.g. 1234-abcd..."
+                  value={adminUserIdToChange} 
+                  onChange={(e) => setAdminUserIdToChange(e.target.value)} 
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-semibold mb-1 text-slate-500">New Password</label>
+                <Input 
+                  type="password" 
+                  required 
+                  placeholder="••••••••"
+                  value={newAdminPassword} 
+                  onChange={(e) => setNewAdminPassword(e.target.value)} 
+                />
+              </div>
+              <Button type="submit" disabled={adminActionLoading} className="bg-orange-600 hover:bg-orange-700">
+                Update
+              </Button>
+            </form>
+          </div>
+        </div>
+
         <div className="p-8">
+          <h3 className="text-xl font-bold mb-4 text-slate-800">Post Buy Requirement</h3>
           <form onSubmit={handleAdminPostRequirement} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold mb-2 text-slate-700">Product Name *</label>

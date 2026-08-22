@@ -29,6 +29,11 @@ export default function RequirementsList() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  
   const navigate = useNavigate();
 
   const fetchRequirements = async (searchTerm: string = '') => {
@@ -59,6 +64,36 @@ export default function RequirementsList() {
 
   useEffect(() => {
     fetchRequirements();
+
+    const handleRefresh = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const newPostId = customEvent.detail?.newPostId;
+      const isSellerOffer = customEvent.detail?.isSellerOffer;
+      
+      if (isSellerOffer) return; // Only listen for Buy Requirements
+
+      fetchRequirements().then(() => {
+        if (newPostId) {
+          setTimeout(() => {
+            const targetCard = document.getElementById(`req-${newPostId}`);
+            if (targetCard) {
+              targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              
+              targetCard.style.border = '2px solid #2563eb';
+              targetCard.style.boxShadow = '0 0 15px rgba(37, 99, 235, 0.4)';
+              
+              setTimeout(() => {
+                targetCard.style.border = '1px solid #e2e8f0';
+                targetCard.style.boxShadow = 'none';
+              }, 4000);
+            }
+          }, 300);
+        }
+      });
+    };
+    
+    window.addEventListener('refreshFeed', handleRefresh);
+    return () => window.removeEventListener('refreshFeed', handleRefresh);
   }, []);
 
   const handleCardClick = async (requirement: Requirement) => {
@@ -106,9 +141,12 @@ export default function RequirementsList() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            {requirements.map((req) => (
+            {requirements
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((req) => (
               <div 
                 key={req.id} 
+                id={`req-${req.id}`}
                 onClick={() => handleCardClick(req)}
                 className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-[#004d40] transition-all flex flex-col cursor-pointer"
               >
@@ -152,6 +190,30 @@ export default function RequirementsList() {
           </div>
         ))}
       </div>
+
+      {Math.ceil(requirements.length / itemsPerPage) > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-8" id="buy-pagination-controls">
+          <button 
+            id="buy-prev-btn"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="bg-blue-600 hover:bg-blue-700 text-white border-none py-2 px-4 rounded-md cursor-pointer font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-slate-700 font-medium" id="buy-page-indicator">
+            Page {currentPage} of {Math.ceil(requirements.length / itemsPerPage)}
+          </span>
+          <button 
+            id="buy-next-btn"
+            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(requirements.length / itemsPerPage), prev + 1))}
+            disabled={currentPage === Math.ceil(requirements.length / itemsPerPage)}
+            className="bg-blue-600 hover:bg-blue-700 text-white border-none py-2 px-4 rounded-md cursor-pointer font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {isModalOpen && selectedRequirement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">

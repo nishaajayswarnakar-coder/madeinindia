@@ -51,6 +51,20 @@ export const ProfileSetup = () => {
         throw new Error(insertError.message || "Failed to create profile.");
       }
 
+      // Trigger admin email notification
+      await fetch('/api/notify-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: user.user_metadata?.full_name || formData.companyName,
+          email: user.email || '',
+          phone: formData.phone,
+          role: 'Seller', // Based on the context of this app
+          companyName: formData.companyName,
+          gstNumber: ''
+        })
+      }).catch(err => console.error('Admin notification trigger failed:', err));
+
       alert("Profile created successfully!");
       navigate('/dashboard'); // Will redirect back home or to a dashboard route if it exists
     } catch (err: any) {
